@@ -1,0 +1,38 @@
+{
+  "name": "backend-monitoring-sdk",
+  "version": "0.1.0",
+  "description": "Lightweight SDK for sending backend metrics to a monitoring server",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [
+    "monitoring",
+    "metrics",
+    "backend",
+    "sdk"
+  ],
+  "author": "Atithi Jaiman",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Atithi2908/Backend_monitoring_system.git",
+    "directory": "packages/sdk"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.3.3",
+    "typescript": "^5.3.3"
+  }
+}
