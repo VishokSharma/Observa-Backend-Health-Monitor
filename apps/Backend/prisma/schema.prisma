@@ -1,0 +1,255 @@
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  
+  projects  Project[]
+}
+
+model ApiKey {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  projectId String
+  createdAt DateTime @default(now())
+  isActive  Boolean  @default(true)
+
+  project   Project  @relation(fields: [projectId], references: [id])
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  region      String   @default("US-EAST-1")
+  status      String   @default("ACTIVE")
+  slackWebhookUrl String?
+
+  userId      String?
+  createdAt   DateTime @default(now())
+  user        User?     @relation(fields: [userId], references: [id])
+  services    Service[]
+  apiKeys     ApiKey[]
+
+  @@unique([userId, name])
+}
+
+model Service {
+  id        String   @id @default(cuid())
+  name      String
+  status    String   @default("ACTIVE")
+  uptime    Float    @default(100)
+  projectId String
+  createdAt DateTime @default(now())
+
+  project   Project  @relation(fields: [projectId], references: [id])
+
+  @@unique([projectId, name])
+}
+model RequestMetric {
+  id          BigInt   @id @default(autoincrement())
+
+  projectId   String
+  serviceName String
+
+  timestamp   BigInt
+  receivedAt  DateTime @default(now())
+
+  method      String
+  route       String
+  statusCode  Int
+
+  latencyMs   Int
+
+  isError     Boolean
+
+  @@map("request_metrics")
+  @@index([projectId, timestamp], name: "idx_request_project_time")
+  @@index([route], name: "idx_request_route")
+  @@index([projectId, isError], name: "idx_request_errors")
+}
+
+model SystemMetric {
+  id               BigInt   @id @default(autoincrement())
+  projectId        String
+  serviceName      String
+  timestamp        BigInt
+  receivedAt       DateTime @default(now())
+
+  cpuUsagePercent  Float
+  memoryUsageMb    Float
+
+  @@map("system_metrics")
+  @@index([projectId,serviceName, timestamp], name: "idx_system_project_time")
+}
+
+model RequestMetricAggregate {
+  id                String   @id @default(cuid())
+
+  projectId         String
+  serviceName       String
+  route             String
+  method            String
+
+  minuteBucket      BigInt
+
+  totalRequests     Int
+  successCount      Int
+  clientErrorCount  Int
+  serverErrorCount  Int
+
+  avgResponseTime   Float
+  maxResponseTime   Float
+  p95ResponseTime   Float
+
+  createdAt         DateTime @default(now())
+
+  @@index([projectId, serviceName, route, method, minuteBucket])
+  @@index([projectId, serviceName, minuteBucket])
+  @@unique([projectId, serviceName, route, method, minuteBucket])
+}
+
+model SystemMetricAggregate {
+  id            String   @id @default(cuid())
+
+  projectId     String
+  serviceName   String
+
+  minuteBucket  BigInt   // store as epoch minute start
+
+  avgCpu        Float
+  maxCpu        Float
+
+  avgMemoryMb   Float
+  maxMemoryMb   Float
+
+  createdAt     DateTime @default(now())
+
+  @@index([projectId, serviceName, minuteBucket])
+  @@unique([projectId, serviceName, minuteBucket])
+  @@map("system_metric_aggregates")
+}
+
+model RequestMetricAggregateHour {
+  id                String   @id @default(cuid())
+
+  projectId         String
+  serviceName       String
+  route             String
+  method            String
+
+  hourBucket        BigInt   // epoch hour start
+
+  totalRequests     Int
+  successCount      Int
+  clientErrorCount  Int
+  serverErrorCount  Int
+
+  avgResponseTime   Float
+  maxResponseTime   Float
+  p95ResponseTime   Float
+
+  createdAt         DateTime @default(now())
+
+  @@index([projectId, serviceName, route, method, hourBucket])
+  @@index([projectId, serviceName, hourBucket])
+  @@unique([projectId, serviceName, route, method, hourBucket])
+}
+
+model SystemMetricAggregateHour {
+  id            String   @id @default(cuid())
+
+  projectId     String
+  serviceName   String
+
+  hourBucket    BigInt
+
+  avgCpu        Float
+  maxCpu        Float
+
+  avgMemoryMb   Float
+  maxMemoryMb   Float
+
+  createdAt     DateTime @default(now())
+
+  @@index([projectId, serviceName, hourBucket])
+  @@unique([projectId, serviceName, hourBucket])
+}
+
+model RequestMetricAggregateDay {
+  id                String   @id @default(cuid())
+
+  projectId         String
+  serviceName       String
+  route             String
+  method            String
+
+  dayBucket         BigInt   // epoch start of day (00:00)
+
+  totalRequests     Int
+  successCount      Int
+  clientErrorCount  Int
+  serverErrorCount  Int
+
+  avgResponseTime   Float
+  maxResponseTime   Float
+  p95ResponseTime   Float
+
+  createdAt         DateTime @default(now())
+
+  @@index([projectId, serviceName, route, method, dayBucket])
+  @@index([projectId, serviceName, dayBucket])
+  @@unique([projectId, serviceName, route, method, dayBucket])
+}
+
+model SystemMetricAggregateDay {
+  id            String   @id @default(cuid())
+
+  projectId     String
+  serviceName   String
+
+  dayBucket     BigInt
+
+  avgCpu        Float
+  maxCpu        Float
+
+  avgMemoryMb   Float
+  maxMemoryMb   Float
+
+  createdAt     DateTime @default(now())
+
+  @@index([projectId, serviceName, dayBucket])
+  @@unique([projectId, serviceName, dayBucket])
+}
+
+model AlertRule {
+  id           String   @id @default(uuid())
+  projectId    String
+  serviceName  String
+
+  metricType   String  
+  metricField  String   
+
+  operator     String 
+  threshold    Float
+
+  windowSec    Int    
+
+  endpoint     String?  
+
+  isActive     Boolean  @default(true)
+  triggered    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
