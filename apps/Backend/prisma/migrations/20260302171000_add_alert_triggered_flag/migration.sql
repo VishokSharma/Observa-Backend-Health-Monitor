@@ -1,0 +1,2 @@
+ALTER TABLE "AlertRule"
+ADD COLUMN "triggered" BOOLEAN NOT NULL DEFAULT false;
