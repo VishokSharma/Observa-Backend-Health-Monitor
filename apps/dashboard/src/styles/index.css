@@ -1,0 +1,11 @@
+/* Global Styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.bg-grid-pattern {
+  background-size: 40px 40px;
+  background-image:
+    linear-gradient(to right, #e2e2dd 1px, transparent 1px),
+    linear-gradient(to bottom, #e2e2dd 1px, transparent 1px);
+}
