@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monitoring-config
+data:
+  NODE_ENV: "production"
+  RABBITMQ_URL: "amqp://rabbitmq-service:5672"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: monitoring-secret
+type: Opaque
+stringData:
+  DATABASE_URL: "${DB_URL_SECRET}"
