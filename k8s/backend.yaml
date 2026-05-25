@@ -1,0 +1,43 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend   # Need space after colon
+  template:          # This wrapper was missing entirely!
+    metadata:
+      labels:
+        app: backend # Need space after colon
+    spec:
+      containers:
+        - name: backend
+          image: 23bcs021/backend-monitoring-backend:latest
+          ports:
+            - containerPort: 4000
+          envFrom:
+            - configMapRef:
+                name: monitoring-config  # Fixed typo ('montioring-config')
+            - secretRef:
+                name: monitoring-secret
+          livenessProbe:
+            httpGet:
+              path: /metrics-debug     # Added the missing 's' from your compose file
+              port: 4000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+spec:
+  selector:
+    app: backend   # Need space after colon
+  ports:
+    - protocol: TCP
+      port: 4000
+      targetPort: 4000
